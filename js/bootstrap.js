@@ -1,0 +1,9 @@
+// Compare the deployed HTML itself, so future edits need no manual version bump.
+let updateAvailable=false, updateBusy=false;
+async function pageFingerprint(){const u=new URL('index.html',location.href);u.searchParams.set('_update',Date.now());const res=await fetch(u,{cache:'no-store'});if(!res.ok)throw Error('update check');const html=await res.text();return html.trim()}
+function updateNotice(){if(!updateAvailable||pending||$('modal').style.display==='grid'||document.getElementById('updateNotice'))return;const el=document.createElement('div');el.id='updateNotice';el.className='panel';el.style.cssText='position:fixed;bottom:12px;right:12px;left:12px;max-width:440px;margin-left:auto;z-index:80;box-shadow:0 4px 20px #0008';el.innerHTML='<h3>發現新版本</h3><p>更新前將儲存目前進度。你也可以稍後再更新。</p><button id="updateLater">稍後更新</button> <button id="updateNow">立即更新</button>';document.body.appendChild(el);$('updateLater').onclick=()=>{el.remove();updateAvailable=false};$('updateNow').onclick=()=>{if(pending||$('modal').style.display==='grid'){el.remove();return}if(s)save();const u=new URL(location.href);u.searchParams.set('_v',Date.now());location.replace(u.href)}}
+// Compare the deployed script against the script currently running.
+const runningVersion=document.querySelector('meta[name="game-version"]').content;
+async function checkRunningVersion(){if(updateBusy)return;updateBusy=true;try{const remote=await pageFingerprint();const doc=new DOMParser().parseFromString(remote,'text/html');const remoteVersion=doc.querySelector('meta[name="game-version"]')?.content;if(remoteVersion&&remoteVersion!==runningVersion)updateAvailable=true;updateNotice()}catch{}finally{updateBusy=false}}
+setInterval(checkRunningVersion,60000);setInterval(updateNotice,2000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkRunningVersion()});
+render();

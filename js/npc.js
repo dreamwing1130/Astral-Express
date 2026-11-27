@@ -14,4 +14,17 @@ function follow(g,line){show(g.title+'｜繼續追問',[...g.follow.map(([q,a])=
 function menu(line){show('透過冒險者與'+combatants[n][0]+'交談',[...topics.map(g=>[g.title,()=>follow(g,reply(g,g.line))]),['結束交談',()=>finish()]],line)}
 if(!spend(1))return;npcResult='';const line='少年蹲下來，與史萊姆互相咕嚕了幾聲。「牠說你好，還問你有沒有乖乖……」';log(line);finish();menu(line)}
 
-function npcRoom(n){if(!alive(n))return null;if(n==='boss'&&s.flags.protectBoy)return s.loc;if(n==='boy'&&s.flags.staffDead)return boyFollowing()?s.loc:(s.flags.boyRest?'boyRoom':s.p<2?'dining':'boyRoom');if(schedules[n])return n==='mage'&&s.day===1&&s.p===3&&s.flags.staffDead?'hall':schedules[n][s.p];if(n==='staff')return s.day===1?(s.p<2?'dining':s.p===2?'hall':null):null;if(n==='captain')return 'engine';if(n==='wu')return s.flags.carryWu?s.loc:(s.flags.wuLoc||'dining');if(n==='slime')return s.flags.ballReleasedLoc||'dining';if(n==='chef')return 'kitchen';return null}
+const movingNPCs=['mage','boy','boss','staff'];
+function npcDestination(n,state=s){
+ if(n==='staff')return state.p<2?'dining':'hall';
+ if(n==='mage'&&state.day===1&&state.p===3&&state.flags.staffDead)return 'hall';
+ if(n==='boy'&&state.flags.staffDead)return state.flags.boyRest?'boyRoom':state.p<2?'dining':'boyRoom';
+ return schedules[n][state.p];
+}
+function initNpcMotion(state){if(state.npcMotion)return;state.npcMotion={};for(const n of movingNPCs)state.npcMotion[n]={loc:npcDestination(n,state),ap:7};state.npcElapsed=0;if(state.flags.boyFollowing)state.npcMotion.boy.loc=state.loc;}
+function npcPath(from,to){if(from===to)return [];const queue=[[from,[]]],seen=new Set([from]);while(queue.length){const [at,path]=queue.shift();for(const next of edges[at]||[]){if(seen.has(next))continue;const route=[...path,next];if(next===to)return route;seen.add(next);queue.push([next,route])}}return []}
+function resetNpcPhase(){initNpcMotion(s);s.npcElapsed=0;for(const n of movingNPCs)s.npcMotion[n].ap=7}
+function npcTick(cost,flush=false){initNpcMotion(s);const old=s.npcElapsed||0;const next=flush?budgets[s.p]:Math.min(budgets[s.p],old+cost);const ticks=Math.floor(next*7/budgets[s.p])-Math.floor(old*7/budgets[s.p]);s.npcElapsed=next;
+ for(let i=0;i<ticks;i++){for(const n of movingNPCs){if(!alive(n))continue;const m=s.npcMotion[n];if(n==='boy'&&boyFollowing()){m.loc=s.loc;continue}if(n===activeNpc||n===s.flags.combatTarget||m.ap<=0)continue;const victim=s.p===3&&n==='boss'?(s.day===2?'mage':s.day===3?'boy':null):null;const dest=victim&&alive(victim)&&!s.flags['murderDone'+s.day]?npcRoom(victim):npcDestination(n);const path=npcPath(m.loc,dest);if(path.length){m.loc=path[0];m.ap--}}runScheduledMurders();if(s.flags.protectBoy||s.end)break;}
+}
+function npcRoom(n){if(!alive(n))return null;if(n==='boy'&&boyFollowing())return s.loc;if(movingNPCs.includes(n)){initNpcMotion(s);return s.npcMotion[n].loc}if(n==='captain')return 'engine';if(n==='wu')return s.flags.carryWu?s.loc:(s.flags.wuLoc||'dining');if(n==='slime')return s.flags.ballReleasedLoc||'dining';if(n==='chef')return 'kitchen';return null}

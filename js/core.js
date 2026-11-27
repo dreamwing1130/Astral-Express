@@ -1,0 +1,28 @@
+const roles={探勘者:{sense:3,mind:1,charm:0},學者:{sense:1,mind:3,charm:0},交涉者:{sense:0,mind:1,charm:3}};
+const rooms={engine:['引擎室','熱浪迎面而來。鍋爐旁堆積著燒得通紅的煤炭，粗大的管線不斷震動，火星隨著熱氣升起。'],dining:['餐廳','銀器排列整齊，窗外的雲層逐漸染上暗紅。'],kitchen:['廚房','刀具懸在半空，砧板上傳來規律的切割聲。'],hall:['交誼廳','柔軟的沙發圍著矮桌，供旅客彼此交流。牆上掛著一系列肖像，窗邊擺著一架鋼琴。'],corr:['走廊1','第一扇客房門旁掛著銅牌。'],own:['房間1（自己）','床鋪、地毯與一張小桌。'],corr2:['走廊2','走廊的燈光微微晃動。'],mageRoom:['房間2（法師）','桌上堆著筆記與星圖。'],corr3:['走廊3','門旁放著一雙旅行靴。'],boyRoom:['房間3（冒險者）','背包與旅行用品散落在床邊。'],corr4:['走廊盡頭','牆面看似完整，卻有一道細微接縫。'],boss:['房間4（財團老闆）','昂貴的家具與一疊商業文件。'],shrine:['祈禱室','黑色圓形祭壇中央有三處凹槽。']};
+const schedules={mage:['mageRoom','dining','hall','mageRoom','mageRoom'],boy:['hall','dining','corr3','boyRoom','boyRoom'],boss:['boss','dining','hall','boss','boss']};
+const names={mage:'法師',boy:'冒險者',boss:'財團老闆'};
+function isDead(n){return !!s.flags[n+'Dead']}
+function isCaptured(n){return s.flags.ballSlime===n}
+function alive(n){return !isDead(n)&&!isCaptured(n)}
+
+function present(n){return npcRoom(n)===s.loc}
+const phases=['早晨','午間','午後','夜晚','午夜'];const budgets=[5,4,5,4,7];const key='startrain-experiment-4';let s=null,snap=null,pending=null;
+const metaKey='startrain-meta-v1';let meta={finished:false,points:0,ach:[]};try{Object.assign(meta,JSON.parse(localStorage.getItem(metaKey)||'{}'))}catch{}let mode='normal',build=[5,5,5];const attrKeys=['sense','mind','charm'];const mod=v=>v>=5?v-5:Math.ceil((v-5)/2);const left=()=>21+meta.points-build.reduce((a,b)=>a+b,0);function storeMeta(){localStorage.setItem(metaKey,JSON.stringify(meta))}
+
+function award(id){s.ach ||= [];if(s.ach.includes(id))return;s.ach.push(id);s.luck+=5;log('成就解鎖：'+id+'（幸運 +5）');if(!meta.ach.includes(id)){meta.ach.push(id);meta.points++;storeMeta()}}
+
+function diceSvg(n){return '<svg class="diceface rolling" viewBox="0 0 110 125"><g stroke="#a68b5c" stroke-width="1.5" stroke-linejoin="round"><path d="M55 3 100 35 107 65 55 122 3 65 10 35Z" fill="#344b60"/><path d="M55 3 10 35 55 25Z" fill="#b7d1dc"/><path d="M55 3 100 35 55 25Z" fill="#7598ac"/><path d="M10 35 3 65 30 85 55 25Z" fill="#42677d"/><path d="M100 35 107 65 80 85 55 25Z" fill="#294557"/><path d="M55 25 80 85 55 105 30 85Z" fill="#638da5"/><path d="M3 65 55 122 55 105 30 85Z" fill="#243b4b"/><path d="M107 65 55 122 55 105 80 85Z" fill="#172e40"/></g><text x="55" y="76" text-anchor="middle" font-size="29" font-weight="bold" fill="white">'+n+'</text></svg>'}const copy=x=>JSON.parse(JSON.stringify(x));const $=id=>document.getElementById(id);const has=x=>s.items.includes(x);const knows=x=>s.clues.includes(x);let audio;function sound(k){try{audio ||= new (window.AudioContext||window.webkitAudioContext)();audio.resume();let seq={click:[440],piano:[262,330,392,523,392,330,262],item:[523,659,784],clue:[392,587],death:[180,90],night:[330,220,165],rewind:[220,440,880,330]}[k];seq.forEach((f,i)=>{let o=audio.createOscillator(),g=audio.createGain(),t=audio.currentTime+i*.12;o.type=k==='death'?'triangle':'sine';o.frequency.value=f;g.gain.setValueAtTime(.07,t);g.gain.exponentialRampToValueAtTime(.001,t+.25);o.connect(g);g.connect(audio.destination);o.start(t);o.stop(t+.26)})}catch{}}document.addEventListener('click',e=>{if(e.target.closest('button'))sound('click')});const dreams=['守護旅者的塞萊斯蒂安大人，請用您神聖的血液保護旅者、用飽含星辰的心指引迷途、用純潔如寶石般的靈魂淨化罪惡。','神需要虔誠的心臟、新鮮的血液、跟人的靈魂。','會動的裝飾，沒有靈魂。','安置於瓶中的陳釀，是神聖的血液。','繪滿航向的心臟，藏於熔岩之中。','黑色的圓鑰匙可以打開祭壇。'];function normal(){return s.day===1&&!s.flags.staffDead&&!s.flags.awakened}
+
+function log(x){if(activeNpc)npcResult+=(npcResult?'\n':'')+x;else s.current=(s.current||'')+'\n'+x;s.log.unshift(x);s.log=s.log.slice(0,500)}
+
+function clue(x){if(!knows(x)){s.clues.push(x);if(s.clues.length>=5)award('追尋真相');sound('clue');log('記下線索：'+x)}}
+
+function item(x){if(x==='乖乖'||!has(x)){s.items.push(x);if(new Set(s.items).size>=5)award('旅行收藏家');sound('item');log('取得：'+x)}}
+
+const SAVE_SCHEMA=1;
+function validState(x){return !!x&&typeof x==='object'&&Number.isInteger(x.day)&&x.day>=1&&x.day<=4&&Number.isInteger(x.p)&&x.p>=0&&x.p<=4&&Number.isFinite(x.ap)&&x.ap>=0&&Object.hasOwn(rooms,x.loc)&&Array.isArray(x.items)&&Array.isArray(x.clues)&&Array.isArray(x.log)&&!!x.flags&&typeof x.flags==='object'}
+function decodeSave(raw){const x=JSON.parse(raw);if(!x||(x.schema!==undefined&&x.schema!==SAVE_SCHEMA)||!validState(x.s)||!validState(x.snap))throw Error('存檔格式不相容');for(const state of [x.s,x.snap]){delete state.trust;if(state.items.includes('神聖之血'))state.flags.boyBloodGifted=true}return x}
+function save(){localStorage.setItem(key,JSON.stringify({schema:SAVE_SCHEMA,s,snap}))}
+
+function start(role){activeNpc=null;s={role,day:1,p:1,ap:4,hp:8,san:10,luck:4,statues:0,loc:'dining',items:[],clues:[],flags:{keyRoom:['own','mageRoom','boyRoom','boss'][Math.floor(Math.random()*4)]},log:["你踏上列車，一名身穿深綠色制服、戴著白色手套的乘務員微笑著迎接你。在確認你的邀請函後，他將客房鑰匙交給你，並簡單介紹了列車上的設施。\n\n安置好行李後，你來到了餐廳車廂。\n\n車廂內鋪設著深色的木質地板，兩側整齊排列著餐桌與柔軟的座椅。潔白的桌巾上擺放著銀製餐具與晶瑩剔透的玻璃杯，金色的壁燈與木質雕花相互映襯，大片車窗讓陽光灑入室內。\n\n空氣中瀰漫著淡淡的食物香氣。\n\n一名橘髮少年坐在餐桌旁，好奇地打量著車廂內的裝飾；一位身穿深藍色長袍的法師正低頭翻閱手中的書籍；另一名衣著華貴的年長男子則獨自坐在靠窗的位置。\n\n幾隻圓滾滾的史萊姆在桌椅之間穿梭，有的正在擦拭桌面，有的正在清理地板。其中一隻黑色史萊姆身旁放著一個裝滿綠色乖乖的籃子，籃子前還立著一塊小小的販售告示牌。\n\n餐廳前方，幾件衣物與白色手套懸浮在半空中，端著盛有餐點的托盤，在餐桌之間來回移動。\n\n上午十一時，伴隨著一聲悠長的汽笛，列車緩緩駛離月台。窗外的景色逐漸向下遠去，列車平穩地升上天空，朝著遠方的雲層駛去。\n\n午餐已經準備妥當，你可以自由用餐、與其他旅客交談，或是探索這輛列車。\n\n為期四天四夜的觀光之旅，正式開始了。"],end:null};s.flags.heartRoom=['own','mageRoom','boyRoom','boss'][Math.floor(Math.random()*4)];s.mode=mode;s.ach=[];s.damageTotal=0;s.mealRecord=[];if(meta.ach.includes('皮皮皮皮皮'))s.items.push('寶可球');s.rewinds=0;s.sleeps=0;s.tenStreak=0;if(role==='自訂旅客'){s.custom=Object.fromEntries(attrKeys.map((k,i)=>[k,mod(build[i])]));s.luck=left()}snap=copy(s);save();render()}

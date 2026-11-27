@@ -1,8 +1,8 @@
 function canSpend(n){return !!s&&Number.isInteger(n)&&n>=0&&s.ap>=n&&!pending&&!s.end}
-function spend(n){if(!canSpend(n))return false;s.current='';s.ap-=n;return true}
+function spend(n){if(!canSpend(n))return false;s.current='';s.ap-=n;s.npcPending=(s.npcPending||0)+n;return true}
 
 function shouldAdvance(state,busy,inInteraction){return !state.end&&!busy&&!inInteraction&&state.ap===0&&!(state.p===3&&state.loc!=='own')}
-function finish(){if(visible('kitchen')&&visible('shrine'))award('我全都要');save();render();if(shouldAdvance(s,pending,activeNpc))advance()}
+function finish(){if(!pending&&s.npcPending){const cost=s.npcPending;s.npcPending=0;if(!s.end)npcTick(cost)}if(visible('kitchen')&&visible('shrine'))award('我全都要');save();render();if(shouldAdvance(s,pending,activeNpc))advance()}
 
 function act(n,fn){if(!spend(n))return;fn();finish()}
 

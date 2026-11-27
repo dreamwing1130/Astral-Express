@@ -1,6 +1,6 @@
 function boyLocked(){return alive('boy')&&s.flags.staffDead&&!boyFollowing()&&npcRoom('boy')==='boyRoom'&&!s.flags.boyDoorOpen}
 
-function inviteBoy(){check(2,'charm',7,()=>{s.flags.boyFollowing=true;s.flags.boyFollowDay=s.day;delete s.flags.boyDoorOpen;log('少年猶豫了好一會兒，終於點點頭。「那……你不要丟下我喔。」他走到你身旁。')},()=>log('「對不起……我還是有點怕。」少年低下頭。'))}
+function inviteBoy(){check(2,'charm',7,()=>{s.flags.boyFollowing=true;delete s.flags.boyFollowDay;delete s.flags.boyRest;delete s.flags.boyDoorOpen;log('少年猶豫了好一會兒，終於點點頭。「那……你不要丟下我喔。」他走到你身旁。')},()=>log('「對不起……我還是有點怕。」少年低下頭。'))}
 
 function slimeTalk(n){
 const topics=[
